@@ -35,9 +35,29 @@ A secure, anonymous communication platform built with Next.js, MongoDB, and Sock
    
    # For HTTPS (required for audio/video functionality)
    pnpm dev:https
+   
+   # For faster development with Turbopack
+   pnpm dev:turbo
    ```
 
 5. Open [https://localhost:3000](https://localhost:3000) in your browser (accept the self-signed certificate)
+
+## Build Optimization
+
+This project includes build cache optimizations for faster builds:
+
+```bash
+# Production build with caching
+pnpm build
+
+# Production build with experimental cache features
+pnpm build:cache
+
+# Production build with Turbopack
+pnpm build:turbo
+```
+
+See [CACHE_OPTIMIZATION.md](CACHE_OPTIMIZATION.md) for detailed information.
 
 ## Implementation Details
 

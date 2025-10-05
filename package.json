@@ -4,13 +4,19 @@
   "private": true,
   "scripts": {
     "build": "next build",
+    "build:cache": "next build --experimental-cache",
+    "build:turbo": "TURBOPACK=true next build",
     "dev": "node server.js",
     "dev:https": "powershell -ExecutionPolicy Bypass -File start-https.ps1",
+    "dev:turbo": "TURBOPACK=true node server.js",
     "lint": "next lint",
     "start": "NODE_ENV=production node server.js",
     "start:https": "NODE_ENV=production powershell -ExecutionPolicy Bypass -File start-https.ps1",
     "test": "jest",
-    "generate-cert": "node generate-cert.js"
+    "generate-cert": "node generate-cert.js",
+    "clean": "rimraf .next node_modules/.cache",
+    "clean:cache": "rimraf .next/cache node_modules/.cache",
+    "cache:info": "pnpm store path"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -77,6 +83,7 @@
     "@types/react-dom": "^19",
     "jest": "^30.2.0",
     "postcss": "^8.5",
+    "rimraf": "^6.0.1",
     "tailwindcss": "^3.4.17",
     "ts-jest": "^29.4.4",
     "typescript": "^5"
