@@ -1,30 +1,103 @@
-# SecretLink Features
+# Speak with Anyone Secretly
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+A secure, anonymous communication platform built with Next.js, MongoDB, and Socket.IO.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/aravinds-projects-76c5bcce/v0-secret-link-features)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/3Ta1NBlVrJZ)
+## Features
 
-## Overview
+- Generate and join private rooms with secret keys
+- Secure room validation using MongoDB
+- Real-time communication with Socket.IO
+- Audio and video calling capabilities
+- Public and private room options
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+## Setup Instructions
 
-## Deployment
+1. Install dependencies:
+   ```bash
+   pnpm install
+   ```
 
-Your project is live at:
+2. Set up environment variables:
+   Create a `.env.local` file with your MongoDB connection string:
+   ```
+   MONGODB_URI=mongodb+srv://Aravind:Aravind%402041@cluster0.ykz5b.mongodb.net/speak-with-anyone-secretely
+   ```
 
-**[https://vercel.com/aravinds-projects-76c5bcce/v0-secret-link-features](https://vercel.com/aravinds-projects-76c5bcce/v0-secret-link-features)**
+3. Generate SSL certificates for HTTPS (required for audio/video):
+   ```bash
+   pnpm generate-cert
+   ```
 
-## Build your app
+4. Run the development server:
+   ```bash
+   # For HTTP (local development only)
+   pnpm dev
+   
+   # For HTTPS (required for audio/video functionality)
+   pnpm dev:https
+   ```
 
-Continue building your app on:
+5. Open [https://localhost:3000](https://localhost:3000) in your browser (accept the self-signed certificate)
 
-**[https://v0.app/chat/projects/3Ta1NBlVrJZ](https://v0.app/chat/projects/3Ta1NBlVrJZ)**
+## Implementation Details
 
-## How It Works
+### MongoDB Integration
+- Rooms are stored in MongoDB with automatic expiration (24 hours)
+- Secret keys are validated against the database before joining rooms
+- Connection pooling for efficient database access
 
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+### Socket.IO Implementation
+- Real-time communication between users
+- Room-based messaging system
+- WebRTC signaling for audio/video calls
+- Custom Socket.IO server implementation with proper room management
+
+### Security Features
+- Secret keys are randomly generated and stored securely
+- Room expiration prevents unauthorized access
+- Private rooms require valid keys to join
+
+## Audio/Video Implementation
+
+The application now has a working WebRTC implementation for both audio and video calls:
+
+- Proper WebRTC signaling with offer/answer exchange
+- ICE candidate handling for NAT traversal
+- Media stream management for both local and remote streams
+- Connection state monitoring for debugging
+
+**Note**: Audio/video functionality requires HTTPS in modern browsers due to security restrictions on media device access.
+
+## Known Issues
+
+1. **WebRTC Implementation**:
+   - Current implementation works for basic audio/video calls
+   - Signaling server needs additional work for production use with multiple participants
+
+2. **UI/UX Improvements**:
+   - Loading states could be more user-friendly
+   - Error handling could be more comprehensive
+   - Mobile responsiveness needs testing
+
+## Future Improvements
+
+- Implement full WebRTC peer-to-peer communication with multiple participants
+- Add end-to-end encryption for messages
+- Implement user authentication and profiles
+- Add chat functionality alongside audio/video calls
+- Improve UI/UX with better loading states and error handling
+- Add recording capabilities for calls
+- Implement moderation features for public rooms
+
+## Dependencies
+
+- Next.js 15
+- MongoDB with Mongoose
+- Socket.IO
+- Tailwind CSS
+- Radix UI components
+- TypeScript
+
+## License
+
+MIT

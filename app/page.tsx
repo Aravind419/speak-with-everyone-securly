@@ -21,26 +21,47 @@ export default function HomePage() {
   const [secretKey, setSecretKey] = useState("")
   const [generatedKey, setGeneratedKey] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isValidating, setIsValidating] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
 
-  const generateSecretKey = () => {
+  const generateSecretKey = async () => {
     setIsGenerating(true)
-    // Generate 6-character alphanumeric key
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    let result = ""
-    for (let i = 0; i < 6; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-
-    setTimeout(() => {
-      setGeneratedKey(result)
-      setIsGenerating(false)
-      toast({
-        title: "Secret Key Generated!",
-        description: "Share this key with others to connect privately.",
+    
+    try {
+      // Call API to create room
+      const response = await fetch("/api/socket", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ type: "create-room" }),
       })
-    }, 500)
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        setGeneratedKey(data.roomId)
+        toast({
+          title: "Secret Key Generated!",
+          description: "Share this key with others to connect privately.",
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to generate secret key. Please try again.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate secret key. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   const copyToClipboard = (text: string) => {
@@ -51,7 +72,7 @@ export default function HomePage() {
     })
   }
 
-  const joinRoom = (key: string, type: "private" | "public") => {
+  const validateAndJoinRoom = async (key: string, type: "private" | "public") => {
     if (type === "private" && !key.trim()) {
       toast({
         title: "Error",
@@ -61,13 +82,48 @@ export default function HomePage() {
       return
     }
 
-    const roomKey = type === "public" ? "PUBLIC123" : key.toUpperCase()
-    router.push(`/room/${roomKey}?type=${type}`)
+    setIsValidating(true)
+    
+    try {
+      const roomKey = type === "public" ? "PUBLIC123" : key.toUpperCase()
+      
+      // Validate room key with API
+      const response = await fetch("/api/socket", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          type: "validate-room",
+          roomId: roomKey
+        }),
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        router.push(`/room/${roomKey}?type=${type}`)
+      } else {
+        toast({
+          title: "Invalid Key",
+          description: data.message || "The secret key is invalid or has expired.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to validate room key. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsValidating(false)
+    }
   }
 
   const handleEnterKey = () => {
     if (secretKey.length === 6) {
-      joinRoom(secretKey, "private")
+      validateAndJoinRoom(secretKey, "private")
     } else {
       toast({
         title: "Invalid Key",
@@ -78,7 +134,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4" suppressHydrationWarning>
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -108,8 +164,16 @@ export default function HomePage() {
                   maxLength={6}
                   className="font-mono text-center text-lg"
                 />
-                <Button onClick={handleEnterKey} className="shrink-0" disabled={secretKey.length !== 6}>
-                  <Key className="h-4 w-4" />
+                <Button 
+                  onClick={handleEnterKey} 
+                  className="shrink-0" 
+                  disabled={secretKey.length !== 6 || isValidating}
+                >
+                  {isValidating ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                  ) : (
+                    <Key className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -117,8 +181,12 @@ export default function HomePage() {
             {/* Generate Secret Key */}
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="outline" className="w-full" onClick={generateSecretKey}>
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button variant="outline" className="w-full" onClick={generateSecretKey} disabled={isGenerating}>
+                  {isGenerating ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2"></div>
+                  ) : (
+                    <Plus className="h-4 w-4 mr-2" />
+                  )}
                   Generate Secret Key
                 </Button>
               </DialogTrigger>
@@ -145,7 +213,14 @@ export default function HomePage() {
                           <Copy className="h-4 w-4 mr-2" />
                           Copy Key
                         </Button>
-                        <Button onClick={() => joinRoom(generatedKey, "private")} className="flex-1">
+                        <Button 
+                          onClick={() => validateAndJoinRoom(generatedKey, "private")} 
+                          className="flex-1"
+                          disabled={isValidating}
+                        >
+                          {isValidating ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2"></div>
+                          ) : null}
                           Join Room
                         </Button>
                       </div>
@@ -156,8 +231,17 @@ export default function HomePage() {
             </Dialog>
 
             {/* Pair Default */}
-            <Button variant="secondary" className="w-full" onClick={() => joinRoom("PUBLIC123", "public")}>
-              <Globe className="h-4 w-4 mr-2" />
+            <Button 
+              variant="secondary" 
+              className="w-full" 
+              onClick={() => validateAndJoinRoom("PUBLIC123", "public")}
+              disabled={isValidating}
+            >
+              {isValidating ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2"></div>
+              ) : (
+                <Globe className="h-4 w-4 mr-2" />
+              )}
               Join Public Room
             </Button>
           </CardContent>
